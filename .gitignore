@@ -1,1 +1,4 @@
-/awesome-*.tar.xz
+rpm/
+srpm/
+pkgs/
+*.tar.xz
