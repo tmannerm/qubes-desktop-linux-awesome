@@ -40,7 +40,7 @@ endif
 
 verify-sources:
 ifneq ($(SRC_FILE), None)
-	@md5sum --quiet -c sources
+	@sha256sum --quiet -c sources
 endif
 
 .PHONY: clean-sources
