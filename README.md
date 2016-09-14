@@ -34,11 +34,15 @@ sudo dnf builddep awesome.spec
 ```
 spectool -g awesome.spec
 ```
-5. Build the rpms with
+5. Verify downloaded sources
+```
+make verify-sources
+```
+6. Build the rpms with
 ```
 make rpms
 ```
-6. Finally copy the rpm somewhere convenient with
+7. Finally copy the rpm somewhere convenient with
 ```
 cp ../rpm/x86_64/awesome-3.5.9-1.fc23.x86_64.rpm /tmp/awesome.rpm
 ```
@@ -51,6 +55,7 @@ cd qubes-desktop-linux-awesome/
 sudo dnf install @development-tools fedora-packager rpmdevtools
 sudo dnf builddep awesome.spec
 spectool -g awesome.spec
+make verify-sources
 make rpms
 cp ../rpm/x86_64/awesome-3.5.9-1.fc23.x86_64.rpm /tmp/awesome.rpm
 ```
