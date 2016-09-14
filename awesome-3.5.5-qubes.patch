@@ -1,19 +1,35 @@
-From e9fb7b5ef6d4659b7aec007f776f74891fe90627 Mon Sep 17 00:00:00 2001
-From: Wojtek Porczyk <woju@invisiblethingslab.com>
-Date: Fri, 20 May 2016 13:00:09 +0200
+From c89b454d84a99c710f4857964a2b8d87f599e0e6 Mon Sep 17 00:00:00 2001
+From: Wojciech Zygmunt Porczyk <woju@invisiblethingslab.com>
+Date: Sat, 10 Sep 2016 17:51:27 +0100
 Subject: [PATCH] Qubes OS integration
 
 Qubes OS library and changes to default config file.
 
-Signed-off-by: Wojtek Porczyk <woju@invisiblethingslab.com>
+This is a squashed commit containing the commits
+
+fbcf483 Qubes OS integration
+4d71206 Update qubes.lua to work with lua 5.3
+7b08bcb Make border colour correct when window first appears.
+5e08dfa Always show a red titlebar for disposable vms
+76a8f99 Border width 5
+43428b1 Black for dom0
+aa7c866 No super bright focus colour
+fcf4fd4 Use menubar.utils for parsing desktop files
+
+of the master branch of this repository
+
+fbcf483 is Signed-off-by: Wojciech Zygmunt Porczyk <woju@invisiblethingslab.com>
+
+the rest are Signed-off-by: Mark Walters <markwalters1009@gmail.com>
 ---
- awesomerc.lua.in |  24 +++----
- lib/qubes.lua.in | 193 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 202 insertions(+), 15 deletions(-)
+ awesomerc.lua.in            |  34 ++++----
+ lib/qubes.lua.in            | 198 ++++++++++++++++++++++++++++++++++++++++++++
+ themes/default/theme.lua.in |   2 +
+ 3 files changed, 217 insertions(+), 17 deletions(-)
  create mode 100644 lib/qubes.lua.in
 
 diff --git a/awesomerc.lua.in b/awesomerc.lua.in
-index 2cd914a..a72088f 100644
+index 7a33bd8..a6fdeb9 100644
 --- a/awesomerc.lua.in
 +++ b/awesomerc.lua.in
 @@ -11,6 +11,8 @@ local beautiful = require("beautiful")
@@ -50,7 +66,41 @@ index 2cd914a..a72088f 100644
  
  -- Menubar configuration
  menubar.utils.terminal = terminal -- Set the terminal for applications that require it
-@@ -440,6 +433,7 @@ client.connect_signal("manage", function (c, startup)
+@@ -353,7 +346,7 @@ root.keys(globalkeys)
+ awful.rules.rules = {
+     -- All clients will match this rule.
+     { rule = { },
+-      properties = { border_width = beautiful.border_width,
++      properties = { border_width = 5,
+                      border_color = beautiful.border_normal,
+                      focus = awful.client.focus.filter,
+                      raise = true,
+@@ -374,6 +367,7 @@ awful.rules.rules = {
+ -- {{{ Signals
+ -- Signal function to execute when a new client appears.
+ client.connect_signal("manage", function (c, startup)
++    qubes.manage(c)
+     -- Enable sloppy focus
+     c:connect_signal("mouse::enter", function(c)
+         if awful.layout.get(c.screen) ~= awful.layout.suit.magnifier
+@@ -394,7 +388,7 @@ client.connect_signal("manage", function (c, startup)
+         end
+     end
+ 
+-    local titlebars_enabled = false
++    local titlebars_enabled = true
+     if titlebars_enabled and (c.type == "normal" or c.type == "dialog") then
+         -- buttons for the titlebar
+         local buttons = awful.util.table.join(
+@@ -437,9 +431,15 @@ client.connect_signal("manage", function (c, startup)
+         layout:set_middle(middle_layout)
+ 
+         awful.titlebar(c):set_widget(layout)
++	if string.match (awful.client.property.get(c, 'qubes_vmname'), '^disp[0-9]*$') then
++	    awful.titlebar.show(c)
++	else
++	    awful.titlebar.hide(c)
++	end
      end
  end)
  
@@ -65,7 +115,7 @@ new file mode 100644
 index 0000000..e383acf
 --- /dev/null
 +++ b/lib/qubes.lua.in
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,198 @@
 +----------------------------------------------------------------------------
 +-- Qubes OS bridge
 +-- @copyright 2014 Invisible Things Lab
@@ -83,6 +133,7 @@ index 0000000..e383acf
 +local util = require('awful.util')
 +local color = require('gears.color')
 +local beautiful = require('beautiful')
++local menubar = require('menubar')
 +
 +local qubes = {}
 +
@@ -173,7 +224,7 @@ index 0000000..e383acf
 +    -- read labels
 +    qubes.labels = { ['*'] = {
 +        colour = beautiful.border_normal,
-+        colour_focus = beautiful.border_focus
++        colour_focus = "#000000" 
 +     } }
 +
 +    local data = util.pread([[python -c "
@@ -185,7 +236,7 @@ index 0000000..e383acf
 +        colour = '#' .. colour
 +
 +        qubes.labels[index] = { colour = shift_luminance(colour, 0.5),
-+            colour_focus = shift_luminance(colour, 1.5) }
++            colour_focus = shift_luminance(colour, 1.0) }
 +    end
 +end
 +
@@ -202,6 +253,7 @@ index 0000000..e383acf
 +
 +    client.property.set(c, 'prefix',
 +        '[' .. client.property.get(c, 'qubes_vmname') .. '] ')
++    c.border_color = qubes.get_colour_focus (c)
 +end
 +
 +function qubes.get_label(c)
@@ -223,14 +275,17 @@ index 0000000..e383acf
 +function qubes.make_vm_menu(vmname, vmpath)
 +    local menu = {}
 +
-+    for desktop in io.popen('ls -1 ' .. vmpath .. '/apps/*.desktop'):lines() do
-+        local entry = parse_desktop_file(desktop)
++--    for desktop in io.popen('ls -1 ' .. vmpath .. '/apps/*.desktop'):lines() do
++--        local entry = parse_desktop_file(desktop)
 +--      if entry['Icon'] == nil then
 +--          entry['Icon'] = vmpath .. '/icon.png'
 +--      end
-+        table.insert(menu, {entry['Name'], entry['Exec'], entry['Icon']})
-+    end
++--        table.insert(menu, {entry['Name'], entry['Exec'], entry['Icon']})
++--    end
 +
++    for _, program in ipairs(menubar.utils.parse_dir(vmpath .. '/apps')) do
++        table.insert(menu, {program.Name, program.cmdline, program.icon_path})
++end
 +    return {vmname, menu, vmpath .. '/icon.png'}
 +end
 +
@@ -259,6 +314,19 @@ index 0000000..e383acf
 +return qubes
 +
 +-- vim: ts=4 sw=4 et
+diff --git a/themes/default/theme.lua.in b/themes/default/theme.lua.in
+index 0fc683c..31e763f 100644
+--- a/themes/default/theme.lua.in
++++ b/themes/default/theme.lua.in
+@@ -22,6 +22,8 @@ theme.border_normal = "#000000"
+ theme.border_focus  = "#535d6c"
+ theme.border_marked = "#91231c"
+ 
++theme.titlebar_bg_focus = "#cc0000"
++theme.titlebar_bg_normal = "#770000"
+ -- There are other variable sets
+ -- overriding the default one when
+ -- defined, the sets are:
 -- 
 2.5.5
 
