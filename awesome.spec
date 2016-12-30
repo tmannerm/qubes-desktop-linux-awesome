@@ -10,8 +10,8 @@ Summary:	Highly configurable, framework window manager for X. Fast, light and ex
 Group:		User Interface/Desktops
 # common/buffer.[ch]: BSD
 License:	GPLv2+ and BSD
-URL:		http://awesome.naquadah.org
-Source0:	http://awesome.naquadah.org/download/%{name}-%{version}.tar.xz
+URL:		https://awesomewm.org
+Source0:	https://github.com/awesomeWM/awesome-releases/raw/master/%{name}-%{version}.tar.xz
 Patch0:		awesome-3.5.9-lua-generic.patch
 Patch1:		awesome-3.5.5-use-vi-instead-of-nano.patch
 Patch100:	awesome-3.5.5-qubes-prefix.patch
