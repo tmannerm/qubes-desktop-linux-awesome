@@ -50,6 +50,7 @@ BuildRequires:	pkgconfig(dbus-1)
 BuildRequires:	lua-lgi
 BuildRequires:	pkgconfig(pango) >= 1.19.3
 BuildRequires:	pkgconfig(pangocairo) >= 1.19.3
+Requires:	qubes-desktop-linux-common
 Requires:	lua-lgi
 # next two loaded via lgi
 Requires:	pango%{?_isa} >= 1.19.3
