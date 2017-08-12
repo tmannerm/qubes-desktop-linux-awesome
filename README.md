@@ -75,7 +75,7 @@ sudo qubes-dom0-update awesome dex-autostart
 ```
 2. Copy the rpm to dom0 with
 ```
-qvm-run --pass-io <build-rpm> 'cat /tmp/awesome.rpm' > awesome.rpm
+qvm-run --pass-io <rpm Qube> 'cat /tmp/awesome.rpm' > awesome.rpm
 ```
 3. Now install the new rpm with
 ```
