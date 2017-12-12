@@ -170,11 +170,6 @@ function qubes.get_colour_focus(c)
     return get_colour_by_state(c, 'qubes_label_color_focus')
 end
 
-function qubes.manager_menuitem()
-    return {'Qubes Manager', 'qubes-manager',
-        '/usr/share/icons/hicolor/16x16/apps/qubes-logo-icon.png'}
-end
-
 function qubes.make_menuitem(vm, program)
     return {program.Name, program.cmdline, program.icon_path}
 end
@@ -223,7 +218,6 @@ end
 
 function qubes.make_menu()
     local menu = qubes.make_menu_with_filter()
-    table.insert(menu, qubes.manager_menuitem())
     return menu
 end
 
