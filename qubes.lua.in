@@ -19,6 +19,8 @@ local menubar = require('menubar')
 
 local qubes = {}
 
+local HOME = os.getenv("HOME")
+
 -- the following three functions are lifted from
 --  /usr/lib64/python2.7/colorsys.py
 
@@ -170,50 +172,45 @@ function qubes.make_menuitem(vm, program)
     return {program.Name, program.cmdline, appicon}
 end
 
-function qubes.make_vm_menu(vm, menuitemfunc)
+--all parameters except for vmname are optional
+function qubes.make_vm_menu(vmname, menuitemfunc, vmapps, vmicon)
     local menu = {}
+    local vmapps = vmapps or HOME .. '/.local/share/qubes-appmenus/' .. vmname .. '/apps/'
+    local menuitemfunc = menuitemfunc or qubes.make_menuitem
+    local vmicon = vmicon or '/var/lib/qubes/appvms/' .. vmname .. '/icon.png'
 
-    for _, program in ipairs(menubar.utils.parse_dir(vm.path .. '/apps')) do
-        local menuitem = menuitemfunc(vm, program)
-        if menuitem ~= nil then
-            table.insert(menu, menuitem)
-        end
+    if not is_accessible(vmapps) then return nil end
+
+    for _, program in ipairs(menubar.utils.parse_dir(vmapps)) do
+        local menuitem = menuitemfunc(vmname, program)
+        if menuitem ~= nil then table.insert(menu, menuitem) end
     end
-    return {vm.name, menu, vm.path .. '/icon.png'}
+
+    --NOTE: awesome will not display menu entries with invalid icon paths
+    return {vmname, menu, vmicon}
 end
 
-function qubes.make_menu_with_filter(filter, menuitemfunc)
+--filter & menuitemfunc are optional parameters
+function qubes.make_menu(filter, menuitemfunc)
     local menu = {}
-    for line in io.popen([[python -c "
-import os.path
-import qubes.qubes
-qvmc = qubes.qubes.QubesVmCollection()
-qvmc.lock_db_for_reading()
-qvmc.load()
-qvmc.unlock_db()
-print('\n'.join('{} {} {}'.format(vm.name, vm.type, vm.dir_path)
-    for vm in sorted(qvmc.values(), key=lambda vm: vm.name)
-    if os.path.isdir(vm.dir_path)))
+
+    --set reasonable defaults
+    local menufunc = qubes.make_vm_menu
+    if filter ~= nil then menufunc = filter(vmname) end
+    local menuitemfunc = menuitemfunc or qubes.make_menuitem
+
+    --add the VM application menus
+    for vmname in io.popen([[python -c "
+from qubesadmin import Qubes
+app = Qubes()
+ret = []
+for vm in app.domains: ret.append(vm.name)
+ret.sort(key=lambda i: i.lower())
+print('\n'.join(ret))
 "]]):lines() do
-        local vm = {}
-        vm.name, vm.type, vm.path = line:match('^(.+) (.+) (.+)$')
-        io.stderr:write('line=' .. line .. '\n')
-        if menuitemfunc == nil then
-            menuitemfunc = qubes.make_menuitem
-        end
-        local menufunc = qubes.make_vm_menu
-        if filter ~= nil then
-            menufunc = filter(vm)
-        end
-        if menufunc ~= nil then
-            table.insert(menu, menufunc(vm, menuitemfunc))
-        end
+        table.insert(menu, menufunc(vmname, menuitemfunc))
     end
-    return menu
-end
 
-function qubes.make_menu()
-    local menu = qubes.make_menu_with_filter()
     return menu
 end
 
