@@ -159,8 +159,15 @@ function qubes.get_colour_focus(c)
     return get_colour_by_state(c, 'qubes_label_color_focus')
 end
 
+function is_accessible(path)
+    return os.rename(path, path) and true or false
+end
+
 function qubes.make_menuitem(vm, program)
-    return {program.Name, program.cmdline, program.icon_path}
+    local appicon = program.icon_path
+    if not is_accessible(appicon) then appicon = nil end
+
+    return {program.Name, program.cmdline, appicon}
 end
 
 function qubes.make_vm_menu(vm, menuitemfunc)
