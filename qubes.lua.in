@@ -80,17 +80,6 @@ end
 
 -- end of codelifting
 
-local function parse_desktop_file(desktop)
-    local entry = {}
-    for line in io.lines(desktop) do
-        key, value = line:match('^(%w+)%s*=%s*(.*)$')
-        if key ~= nil then
-            entry[key] = value
-        end
-    end
-    return entry
-end
-
 local function ensure_min_luminance(colour, minLuminance)
     local r, g, b = color.parse_color(colour)
 
