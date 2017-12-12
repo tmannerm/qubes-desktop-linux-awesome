@@ -199,6 +199,11 @@ function qubes.make_menu(filter, menuitemfunc)
     if filter ~= nil then menufunc = filter(vmname) end
     local menuitemfunc = menuitemfunc or qubes.make_menuitem
 
+    --add the dom0 menu
+    --this is enitrely optional and enables users to create xdg desktop files at the below file path in order to populate the dom0 menu
+    --it will remain invisible until that directory is accessible
+    table.insert(menu, qubes.make_vm_menu('Dom0', nil, HOME .. '/.config/awesome/dom0-menu/', '/usr/share/icons/hicolor/16x16/apps/qubes-logo-icon.png'))
+
     --add the VM application menus
     for vmname in io.popen([[python -c "
 from qubesadmin import Qubes
