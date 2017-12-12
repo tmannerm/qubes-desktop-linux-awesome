@@ -139,6 +139,10 @@ desktop-file-validate %{buildroot}%{_datadir}/xsessions/%{name}.desktop
 
 
 %changelog
+* Tue Dec 12 2017 David Hobach <tripleh@hackingthe.net> - 3.5.9-4
+- added support of the awesome menu for Qubes 4.0
+- added an optional dom0 menu
+
 * Sat Aug 12 2017 David Hobach <tripleh@hackingthe.net> - 3.5.9-4
 - fixed https://github.com/QubesOS/qubes-issues/issues/2780
 - added patch to make the border colors work with Qubes 4.0rc1
