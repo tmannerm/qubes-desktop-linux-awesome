@@ -4,7 +4,7 @@
 
 Name:		awesome
 Version:	3.5.9
-Release:	4%{?dist}
+Release:	5%{?dist}
 Epoch:		1000
 Summary:	Highly configurable, framework window manager for X. Fast, light and extensible
 Group:		User Interface/Desktops
