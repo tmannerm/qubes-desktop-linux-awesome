@@ -140,8 +140,8 @@ desktop-file-validate %{buildroot}%{_datadir}/xsessions/%{name}.desktop
 
 %changelog
 * Tue Dec 12 2017 David Hobach <tripleh@hackingthe.net> - 3.5.9-4
-- added support of the awesome menu for Qubes 4.0
-- added an optional dom0 menu
+- added menu support for Qubes 4.0
+- added optional support for awesome-specific menu entries
 
 * Sat Aug 12 2017 David Hobach <tripleh@hackingthe.net> - 3.5.9-4
 - fixed https://github.com/QubesOS/qubes-issues/issues/2780
