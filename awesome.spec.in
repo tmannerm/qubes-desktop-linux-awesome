@@ -16,6 +16,9 @@ Patch100:	awesome-3.5.5-qubes-prefix.patch
 Patch110:	awesome-3.5.5-qubes.patch
 Patch120:	awesome-3.5.5-dex-autostart.patch
 
+# short-term fix for FTBFS with GCC10
+%define _legacy_common_support 1
+
 BuildRequires:	cmake >= 3.0.0
 
 BuildRequires:	ImageMagick

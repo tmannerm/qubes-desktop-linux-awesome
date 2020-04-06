@@ -1,77 +1,36 @@
-#
-# Common Makefile for building RPMs
-#
+DIST ?= fc32
+VERSION := $(shell cat version)
+REL := $(shell cat rel)
 
-WORKDIR := $(CURDIR)
-SPECDIR ?= $(WORKDIR)
-SRCRPMDIR ?= $(WORKDIR)/../srpm
-BUILDDIR ?= $(WORKDIR)
-RPMDIR ?= $(WORKDIR)/../rpm
-SOURCEDIR := $(WORKDIR)
+FEDORA_SOURCES := https://src.fedoraproject.org/rpms/awesome/raw/f$(subst fc,,$(DIST))/f/sources
+SRC_FILE := awesome-$(VERSION).tar.xz
 
-SPECFILE = awesome.spec
+BUILDER_DIR ?= ../..
+SRC_DIR ?= qubes-src
 
-RPM_DEFINES := --define "_sourcedir $(SOURCEDIR)" \
-               --define "_specdir $(SPECDIR)" \
-               --define "_builddir $(BUILDDIR)" \
-               --define "_srcrpmdir $(SRCRPMDIR)" \
-               --define "_rpmdir $(RPMDIR)"
+DISTFILES_MIRROR ?= https://raw.githubusercontent.com/awesomeWM/awesome-releases/master/
+UNTRUSTED_SUFF := .UNTRUSTED
+FETCH_CMD := wget --no-use-server-timestamps -q -O
 
-DIST_DOM0 ?= fc20
+SHELL := /bin/bash
 
-VER_REL := $(shell rpm $(RPM_DEFINES) -q --qf "%{VERSION}-%{RELEASE}\n" --specfile $(SPECFILE)| head -1|sed -e 's/fc../$(DIST_DOM0)/')
-NAME := $(shell rpm $(RPM_DEFINES) -q --qf "%{NAME}\n" --specfile $(SPECFILE)| head -1)
+%: %.sha512
+	@$(FETCH_CMD) $@$(UNTRUSTED_SUFF) $(DISTFILES_MIRROR)$@
+	@sha512sum --status -c <(printf "$$(cat $<)  -\n") <$@$(UNTRUSTED_SUFF) || \
+			{ echo "Wrong SHA512 checksum on $@$(UNTRUSTED_SUFF)!"; exit 1; }
+	@mv $@$(UNTRUSTED_SUFF) $@
 
-URL := $(shell spectool $(RPM_DEFINES) --list-files --source 0 $(SPECFILE) 2> /dev/null| cut -d ' ' -f 2- )
-ifndef SRC_FILE
-ifdef URL
-	SRC_FILE := $(notdir $(URL))
-endif
-endif
-
+.PHONY: get-sources
 get-sources: $(SRC_FILE)
 
-$(SRC_FILE):
-ifneq ($(SRC_FILE), None)
-	@wget -q $(URL)
-endif
-
 .PHONY: verify-sources
-
 verify-sources:
-ifneq ($(SRC_FILE), None)
-	@sha256sum --quiet -c sources
-endif
+	@true
 
-.PHONY: clean-sources
-clean-sources:
-ifneq ($(SRC_FILE), None)
-	-rm $(SRC_FILE)
-endif
-
-rpms: rpms-dom0
-
-rpms-vm:
-
-rpms-dom0:
-	rpmbuild $(RPM_DEFINES) -bb $(SPECFILE)
-#	rpm --addsign $(RPMDIR)/x86_64/$(NAME)*$(VER_REL)*.rpm
-
-srpms:
-	rpmbuild $(RPM_DEFINES) -bs $(SPECFILE)
-#	rpm --addsign $(SRCRPMDIR)/$(NAME)*$(VER_REL)*.rpm
-
-update-repo-current:
-	ln -f $(RPMDIR)/x86_64/$(NAME)*$(VER_REL)*.rpm ../../yum/current-release/current/dom0/rpm/
-
-update-repo-current-testing:
-	ln -f $(RPMDIR)/x86_64/$(NAME)*$(VER_REL)*.rpm ../../yum/current-release/current-testing/dom0/rpm/
-
-update-repo-unstable:
-	ln -f $(RPMDIR)/x86_64/$(NAME)*$(VER_REL)*.rpm ../../yum/current-release/unstable/dom0/rpm/
-
-update-repo-installer:
-	ln -f $(RPMDIR)/x86_64/$(NAME)*$(VER_REL)*.rpm ../../installer/yum/qubes-dom0/rpm/
-
-clean:
-
+# This target is generating content locally from upstream project
+# 'sources' file. Sanitization is done but it is encouraged to perform
+# update of component in non-sensitive environnements to prevent
+# any possible local destructions due to shell rendering
+.PHONY: update-sources
+update-sources:
+	@$(BUILDER_DIR)/$(SRC_DIR)/builder-rpm/scripts/generate-hashes-from-sources $(FEDORA_SOURCES)
