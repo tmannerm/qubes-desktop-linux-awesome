@@ -19,6 +19,13 @@ Patch120:	awesome-3.5.5-dex-autostart.patch
 # short-term fix for FTBFS with GCC10
 %define _legacy_common_support 1
 
+%define build_docs 1
+
+# No lua-ldoc available so can't build docs
+%if 0%{?suse_version} == 1500
+%define build_docs 0
+%endif
+
 BuildRequires:	cmake >= 3.0.0
 
 BuildRequires:	ImageMagick
@@ -26,7 +33,9 @@ BuildRequires:	asciidoc
 BuildRequires:	doxygen
 BuildRequires:	graphviz
 BuildRequires:	lua-devel >= 5.2
+%if %{build_docs}
 BuildRequires:	lua-ldoc
+%endif
 BuildRequires:	xmlto
 BuildRequires:	gcc-c++
 
@@ -103,11 +112,9 @@ cp %{SOURCE1} lib/
 %patch120 -p1 -b .dex-autostart
 
 %build
-mkdir build; pushd build
 %cmake -DAWESOME_DOC_PATH=%{_pkgdocdir} \
        -DSYSCONFDIR=%{_sysconfdir} \
        ..
-popd
 make -C build VERBOSE=1 %{?_smp_mflags} awesome
 
 
@@ -132,11 +139,11 @@ desktop-file-validate %{buildroot}%{_datadir}/xsessions/%{name}.desktop
 %{_mandir}/*/man5/*
 %{_datadir}/xsessions/%{name}.desktop
 
-
+%if %{build_docs}
 %files doc
 %dir %{_pkgdocdir}
 %doc %{_pkgdocdir}/doc
-
+%endif
 
 %changelog
 * Tue Dec 12 2017 David Hobach <tripleh@hackingthe.net> - 3.5.9-4
