@@ -112,9 +112,11 @@ cp %{SOURCE1} lib/
 %patch120 -p1 -b .dex-autostart
 
 %build
+mkdir build; pushd build
 %cmake -DAWESOME_DOC_PATH=%{_pkgdocdir} \
        -DSYSCONFDIR=%{_sysconfdir} \
        ..
+popd
 make -C build VERBOSE=1 %{?_smp_mflags} awesome
 
 
